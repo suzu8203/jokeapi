@@ -224,51 +224,6 @@ app.patch("/api/jokes/:id", (req, res, next) => {
 
 
 //give vote
-/*
-app.put("/api/jokes/vote/:id", (req, res, next) => {
-
-    var data = {
-        vote: req.body.vote
-    }
-    var voted = {
-        like: 0,
-        dislike: 0
-    }
-    if (!data.vote){
-        console.log("No votes given!");
-    }else {
-        if (data.vote == "like"){
-            voted.like = 1;
-        }
-        else if (data.vote == "dislike"){
-            voted.dislike = 1;
-        }
-        else
-        {
-            console.log("Invalid vote!");
-        }
-        db.run(
-            `UPDATE jokes SET 
-               likes = likes + ?,
-               dislikes = dislikes + ?,
-               WHERE id = ?
-               `,
-            [voted.like, voted.dislike, req.params.id],
-            function (err, result) {
-                if (err){
-                    res.status(400).json({"error": res.message})
-                    return;
-                }
-                res.json({
-                    message: "success",
-                    data: data,
-                    changes: this.changes
-                })
-        });
-    }
-
-})
-*/
 
 app.put("/api/jokes/vote/:id", (req, res, next) => {
 
