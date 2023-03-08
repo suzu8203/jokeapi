@@ -20,8 +20,9 @@ app.get("/", (req, res, next) => {
 //get all jokes
 app.get("/api/jokes", (req, res, next) => {
     var sql =
-    `SELECT * FROM jokes 
-     LEFT JOIN categories ON jokes.category_id = categories.id`
+    `SELECT jokes.id, jokes.joke, jokes.likes, jokes.dislikes, categories.category FROM jokes 
+     JOIN joke_category ON jokes.id = joke_category.joke_id
+     JOIN categories ON joke_category.category_id = categories.id`
     var params = []
     db.all(sql, params, (err, rows) => {
         if (err) {
@@ -38,8 +39,9 @@ app.get("/api/jokes", (req, res, next) => {
 //get joke by id
 app.get("/api/jokes/:id", (req, res, next) => {
     var sql = 
-    `SELECT * FROM jokes
-     LEFT JOIN categories ON jokes.category_id = categories.id
+    `SELECT jokes.id, jokes.joke, jokes.likes, jokes.dislikes, categories.category FROM jokes 
+     JOIN joke_category ON jokes.id = joke_category.joke_id
+     JOIN categories ON joke_category.category_id = categories.id
      WHERE jokes.id = ?`
     var params = [req.params.id]
     db.get(sql, params, (err, row) => {
@@ -57,8 +59,9 @@ app.get("/api/jokes/:id", (req, res, next) => {
 //get all jokes of specific category
 app.get("/api/jokes/categories/:category", (req, res, next) => {
     var sql = 
-    `SELECT * FROM jokes 
-     LEFT JOIN categories ON jokes.category_id = categories.id
+    `SELECT jokes.id, jokes.joke, jokes.likes, jokes.dislikes, categories.category FROM jokes 
+     JOIN joke_category ON jokes.id = joke_category.joke_id
+     JOIN categories ON joke_category.category_id = categories.id
      WHERE categories.category = ?`
     var params = [req.params.category]
     db.get(sql, params, (err, row) => {
@@ -94,8 +97,9 @@ app.get("/api/jokes/category/list/all", (req, res, next) => {
 //get random one from all
 app.get("/api/jokes/random/all", (req, res, next) => {
     var sql = 
-    `SELECT * FROM jokes 
-     LEFT JOIN categories ON jokes.category_id = categories.id
+    `SELECT jokes.id, jokes.joke, jokes.likes, jokes.dislikes, categories.category FROM jokes 
+     JOIN joke_category ON jokes.id = joke_category.joke_id
+     JOIN categories ON joke_category.category_id = categories.id
      ORDER BY random() limit 1`
     var params = []
     db.all(sql, params, (err, rows) => {
@@ -113,8 +117,9 @@ app.get("/api/jokes/random/all", (req, res, next) => {
 //select random one from specific category
 app.get("/api/jokes/random/:category", (req, res, next) => {
     var sql = 
-    `SELECT * FROM jokes 
-     LEFT JOIN categories ON jokes.category_id = categories.id
+    `SELECT jokes.id, jokes.joke, jokes.likes, jokes.dislikes, categories.category FROM jokes 
+     JOIN joke_category ON jokes.id = joke_category.joke_id
+     JOIN categories ON joke_category.category_id = categories.id
      WHERE categories.category = ? 
      ORDER BY RANDOM() LIMIT 1`
     var params = [req.params.category]
@@ -150,9 +155,12 @@ app.post("/api/joke/", (req, res, next) => {
         likes: 0,
         dislikes: 0
     }
-    var sql ='INSERT INTO jokes (joke, category_id, likes, dislikes) VALUES (?,?,?,?)'
-    var params =[data.joke, data.category_id, data.likes, data.dislikes]
-    db.run(sql, params, function (err, result) {
+    var sql1 = 'INSERT IGNORE INTO jokes (joke, likes, dislikes) VALUES (?,?,?)'
+    var sql2 = 'SET @id = LAST_INSERT_ID()'
+    var sql3 = 'INSERT INTO joke_caegory (joke_id, category_id) VALUES (@id,?)'
+    var params1 = [data.joke, data.likes, data.dislikes]
+    var params2 = [data.category_id]
+    db.run(sql1, params1, sql2, sql3, params2, function (err, result) {
         if (err){
             res.status(400).json({"error": err.message})
             return;
@@ -193,8 +201,6 @@ app.post("/api/joke/category", (req, res, next) => {
     });
 })
 
-
-
 //modify joke with id
 app.patch("/api/jokes/:id", (req, res, next) => {
     var data = {
@@ -221,7 +227,36 @@ app.patch("/api/jokes/:id", (req, res, next) => {
 })
 
 //add category to joke with id
-
+app.post("/api/joke/category/add", (req, res, next) => {
+    var errors=[]
+    if (!req.body.joke_id){
+        errors.push("No id specified");
+    }
+    if (!req.body.category_id){
+        errors.push("No category specified");
+    }
+    if (errors.length){
+        res.status(400).json({"error":errors.join(",")});
+        return;
+    }
+    var data = {
+        joke_id: req.body.joke_id,
+        category_id: req.body.category_id
+    }
+    var sql ='INSERT INTO joke_category (joke_id, category_id) VALUES (?,?)'
+    var params =[data.id, data.category_id]
+    db.run(sql, params, function (err, result) {
+        if (err){
+            res.status(400).json({"error": err.message})
+            return;
+        }
+        res.json({
+            "message": "success",
+            "data": data,
+            "id" : this.lastID
+        })
+    });
+})
 
 //give vote
 
