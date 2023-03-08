@@ -9,38 +9,55 @@ let db = new sqlite3.Database(DBSOURCE, (err) => {
       throw err
     }else{
         console.log('Connected to the SQLite database.')
-        db.run(`CREATE TABLE categories (
+
+        //jokes
+        db.run(`CREATE TABLE jokes (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            category text
+            joke TEXT, 
+            likes INTEGER,
+            dislikes INTEGER,
         )`,
         (err) => {
             if (err) {
                 // Table already created
             }else{
-                // Table just created, creating some rows
+                var insert = 'INSERT INTO jokes (joke, likes, dislikes) VALUES (?,?,?)'
+                db.run(insert, ["joke1",0,0])
+                db.run(insert, ["joke2",0,0])
+            }
+        });
+        
+        //categories
+        db.run(`CREATE TABLE categories (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            category TEXT
+        )`,
+        (err) => {
+            if (err) {
+                // Table already created
+            }else{
                 var insert = 'INSERT INTO categories (category) VALUES (?)'
                 db.run(insert, ["BadJokes"])
                 db.run(insert, ["EngineeringJokes"])
             }
         });
-        db.run(`CREATE TABLE jokes (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            joke text, 
-            category_id integer, 
-            likes integer,
-            dislikes integer,
-            FOREIGN KEY (category_id) REFERENCES category (id)
+
+        //joke_category
+        db.run(`CREATE TABLE joke_category (
+            joke_id INTEGER,
+            category_id INTEGER,
+            FOREIGN KEY (joke_id) REFERENCES jokes(id),
+            FOREIGN KEY (category_id) REFERENCES categories(id)
         )`,
         (err) => {
             if (err) {
                 // Table already created
             }else{
-                // Table just created, creating some rows
-                var insert = 'INSERT INTO jokes (joke, category_id, likes, dislikes) VALUES (?,?,?,?)'
-                db.run(insert, ["joke1",1,0,0])
-                db.run(insert, ["joke2",2,0,0])
+                var insert = 'INSERT INTO joke_category (joke_id, category_id) VALUES (?,?)'
+                db.run(insert, [1,2])
+                db.run(insert, [2,1])
             }
-        });  
+        });
     }
 });
 
